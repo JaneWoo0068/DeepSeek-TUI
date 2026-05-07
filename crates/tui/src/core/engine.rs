@@ -1468,8 +1468,15 @@ impl Engine {
                 let policy = if self.config.sandbox_mode.as_deref() == Some("danger-full-access") {
                     crate::sandbox::SandboxPolicy::DangerFullAccess
                 } else {
+                    // Add common writable paths so tools like cp, brew, pipx,
+                    // cargo install, and the /reload command work without YOLO.
+                    let mut writable_roots = vec![self.session.workspace.clone()];
+                    if let Some(home) = dirs::home_dir() {
+                        writable_roots.push(home.join(".cargo/bin"));
+                        writable_roots.push(home.join(".local/bin"));
+                    }
                     crate::sandbox::SandboxPolicy::WorkspaceWrite {
-                        writable_roots: vec![self.session.workspace.clone()],
+                        writable_roots,
                         network_access: true,
                         exclude_tmpdir: false,
                         exclude_slash_tmp: false,
