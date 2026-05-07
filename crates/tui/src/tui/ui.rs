@@ -117,7 +117,7 @@ use super::widgets::{
 const SLASH_MENU_LIMIT: usize = 128;
 const MENTION_MENU_LIMIT: usize = 6;
 const MIN_CHAT_HEIGHT: u16 = 3;
-const MIN_COMPOSER_HEIGHT: u16 = 3;
+const MIN_COMPOSER_HEIGHT: u16 = 2;
 const CONTEXT_WARNING_THRESHOLD_PERCENT: f64 = 85.0;
 const CONTEXT_CRITICAL_THRESHOLD_PERCENT: f64 = 95.0;
 const UI_IDLE_POLL_MS: u64 = 48;
@@ -6118,39 +6118,17 @@ fn render_footer(f: &mut Frame, area: Rect, app: &mut App) {
     let mut props = render_footer_from(app, &app.status_items, toast);
     // FooterProps is mut so the working-strip animation can layer on top.
 
-    // Animate the spacer between the left status line and the right-hand
-    // chips whenever a turn is live: model loading/streaming, compacting, or
-    // sub-agents in flight. Honors the `low_motion` setting — calm terminals
-    // get the plain whitespace gap. Strip frame counter ticks every 150 ms
-    // (crest A advances every 4 ticks ≈ 600 ms, B every 6 ticks ≈ 900 ms,
-    // jitter every 17 ticks ≈ 2.5 s). Dot-pulse counter ticks every 400 ms
-    // so `working` → `working...` reads at a calm pace.
+    // In-flight indicator: a single "working" dot-pulse when a turn is
+    // live. No wave, no multi-line tool status — the transcript already
+    // shows tool progress.
     if footer_working_strip_active(app) {
         let now_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_millis() as u64)
             .unwrap_or(0);
         let dot_frame = now_ms / 400;
-        // Surface one compact live status row in the footer whenever a turn
-        // is live. Tool turns get the current action plus active/done counts;
-        // non-tool work falls back to the existing dot-pulse label.
-        props.state_label = active_subagent_status_label(app)
-            .or_else(|| active_tool_status_label(app))
-            .unwrap_or_else(|| crate::tui::widgets::footer_working_label(dot_frame, app.ui_locale));
+        props.state_label = crate::tui::widgets::footer_working_label(dot_frame, app.ui_locale);
         props.state_color = palette::DEEPSEEK_SKY;
-
-        // Spout drift: only animate when low_motion is off. The textual
-        // `working...` pulse stays even in low-motion mode so the user still
-        // sees that something is happening.
-        if !app.low_motion {
-            let strip_frame = now_ms;
-            props.working_strip_frame = Some(strip_frame);
-        }
-    } else if props.state_label == "ready"
-        && let Some(label) = selected_detail_footer_label(app)
-    {
-        props.state_label = label;
-        props.state_color = palette::TEXT_MUTED;
     }
 
     let widget = FooterWidget::new(props);
