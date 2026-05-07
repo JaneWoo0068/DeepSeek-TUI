@@ -2435,6 +2435,38 @@ async fn run_event_loop(
                             handle_memory_quick_add(app, &input, config);
                             continue;
                         }
+                        // !cmd: execute shell command inline (Claude Code style)
+                        if input.starts_with('!') {
+                            let cmd = input[1..].trim();
+                            if !cmd.is_empty() {
+                                match std::process::Command::new("sh")
+                                    .arg("-c")
+                                    .arg(cmd)
+                                    .output()
+                                {
+                                    Ok(out) => {
+                                        let mut text =
+                                            String::from_utf8_lossy(&out.stdout).to_string();
+                                        let stderr =
+                                            String::from_utf8_lossy(&out.stderr);
+                                        if !stderr.is_empty() {
+                                            text.push_str(&stderr);
+                                        }
+                                        app.push_history_cell(HistoryCell::System {
+                                            content: format!("! {cmd}\n{text}"),
+                                        });
+                                        app.mark_history_updated();
+                                    }
+                                    Err(e) => {
+                                        app.push_history_cell(HistoryCell::System {
+                                            content: format!("! {cmd}\nerror: {e}"),
+                                        });
+                                        app.mark_history_updated();
+                                    }
+                                }
+                            }
+                            continue;
+                        }
                         if input.starts_with('/') {
                             if execute_command_input(
                                 terminal,
