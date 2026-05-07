@@ -582,7 +582,9 @@ impl Renderable for ComposerWidget<'_> {
             };
             input_lines.push(Line::from(Span::styled(
                 placeholder,
-                Style::default().fg(palette::TEXT_MUTED).italic(),
+                Style::default()
+                    .fg(Color::Rgb(90, 100, 120))
+                    .italic(),
             )));
         } else {
             for line in &visible_lines {
