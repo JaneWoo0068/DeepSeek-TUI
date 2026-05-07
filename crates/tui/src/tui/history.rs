@@ -239,7 +239,7 @@ impl HistoryCell {
                 width,
                 *streaming,
                 *duration_secs,
-                !*streaming,
+                true, // always collapsed — ctrl+o to view full thinking
                 options.low_motion,
             ),
             HistoryCell::Tool(cell) if !options.show_tool_details => {
