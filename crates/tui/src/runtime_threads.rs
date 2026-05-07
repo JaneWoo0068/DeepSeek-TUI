@@ -1841,6 +1841,7 @@ impl RuntimeThreadManager {
             )
             .tag()
             .to_string(),
+            sandbox_mode: self.config.sandbox_mode.clone(),
             workshop: self.config.workshop.clone(),
         };
 

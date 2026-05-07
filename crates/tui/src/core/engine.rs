@@ -151,6 +151,10 @@ pub struct EngineConfig {
     /// When true, force `tool_choice: "required"` so the model always calls
     /// a tool on every turn step (V4 strict tool-following mode).
     pub strict_tool_mode: bool,
+    /// User-configured sandbox mode override. When set to
+    /// `"danger-full-access"`, file and shell sandbox restrictions are
+    /// lifted regardless of AppMode.
+    pub sandbox_mode: Option<String>,
     /// Workshop / large-tool-output routing (#548). `None` disables routing.
     pub workshop: Option<crate::tools::large_output_router::WorkshopConfig>,
 }
@@ -185,6 +189,7 @@ impl Default for EngineConfig {
             strict_tool_mode: false,
             goal_objective: None,
             locale_tag: "en".to_string(),
+            sandbox_mode: None,
             workshop: None,
         }
     }
@@ -1460,12 +1465,17 @@ impl Engine {
             // the approval flow doesn't already provide. Elevate to
             // workspace-write + network. (#273)
             AppMode::Agent => {
-                ctx.with_elevated_sandbox_policy(crate::sandbox::SandboxPolicy::WorkspaceWrite {
-                    writable_roots: vec![self.session.workspace.clone()],
-                    network_access: true,
-                    exclude_tmpdir: false,
-                    exclude_slash_tmp: false,
-                })
+                let policy = if self.config.sandbox_mode.as_deref() == Some("danger-full-access") {
+                    crate::sandbox::SandboxPolicy::DangerFullAccess
+                } else {
+                    crate::sandbox::SandboxPolicy::WorkspaceWrite {
+                        writable_roots: vec![self.session.workspace.clone()],
+                        network_access: true,
+                        exclude_tmpdir: false,
+                        exclude_slash_tmp: false,
+                    }
+                };
+                ctx.with_elevated_sandbox_policy(policy)
             }
             // YOLO is the explicit "no guardrails" mode — auto-approve all
             // tools, trust mode on, no sandbox. Workspace-write was still

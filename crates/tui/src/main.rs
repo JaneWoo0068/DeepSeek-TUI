@@ -4076,6 +4076,7 @@ async fn run_exec_agent(
         )
         .tag()
         .to_string(),
+        sandbox_mode: config.sandbox_mode.clone(),
         workshop: config.workshop.clone(),
     };
 
