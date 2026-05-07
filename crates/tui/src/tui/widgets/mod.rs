@@ -37,8 +37,8 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{
-        Block, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
-        StatefulWidget, Widget, Wrap,
+        Block, BorderType, Borders, Clear, Padding, Paragraph, Scrollbar, ScrollbarOrientation,
+        ScrollbarState, StatefulWidget, Widget, Wrap,
     },
 };
 use unicode_segmentation::UnicodeSegmentation;
@@ -448,7 +448,7 @@ impl Renderable for ComposerWidget<'_> {
         let is_draft_mode = input_text.contains('\n') || visible_lines.len() > 1;
         if has_panel {
             let border_color = if input_text.trim().is_empty() {
-                palette::BORDER_COLOR
+                palette::DEEPSEEK_SKY
             } else {
                 self.mode_color()
             };
@@ -546,6 +546,7 @@ impl Renderable for ComposerWidget<'_> {
                     Style::default().fg(palette::TEXT_MUTED),
                 )))
                 .borders(Borders::ALL)
+                .border_type(BorderType::Thick)
                 .border_style(Style::default().fg(border_color))
                 .style(background);
             // Vim mode indicator — shown in the top-right corner of the
