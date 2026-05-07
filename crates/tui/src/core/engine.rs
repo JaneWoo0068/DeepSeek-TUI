@@ -1474,6 +1474,7 @@ impl Engine {
                     if let Some(home) = dirs::home_dir() {
                         writable_roots.push(home.join(".cargo/bin"));
                         writable_roots.push(home.join(".local/bin"));
+                        writable_roots.push(home.join("Library/Application Support/deepseek"));
                     }
                     crate::sandbox::SandboxPolicy::WorkspaceWrite {
                         writable_roots,
