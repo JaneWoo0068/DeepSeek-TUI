@@ -107,16 +107,16 @@ pub fn tips_lines() -> Vec<ratatui::text::Line<'static>> {
         )),
         Line::from(""),
         Line::from(Span::raw(
-            "Write the task in plain language. Use /help or Ctrl+K when you want a command.",
+            "Write the task in plain language. Use /help or ctrl+k when you want a command.",
         )),
         Line::from(Span::raw(
-            "The bottom composer is multi-line: Enter sends, Alt+Enter or Ctrl+J adds a new line.",
+            "The bottom composer is multi-line: Enter adds a newline, ctrl+enter sends.",
         )),
         Line::from(Span::raw(
             "Switch modes only when the job changes: Plan for review-first work, Agent for execution, YOLO when you want auto-approval.",
         )),
         Line::from(Span::raw(
-            "Ctrl+R resumes earlier sessions, and Esc backs out of the current draft or overlay.",
+            "ctrl+r resumes earlier sessions, and Esc backs out of the current draft or overlay.",
         )),
         Line::from(vec![
             Span::styled("Press ", Style::default().fg(palette::TEXT_MUTED)),

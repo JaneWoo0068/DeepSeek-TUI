@@ -117,7 +117,7 @@ use super::widgets::{
 const SLASH_MENU_LIMIT: usize = 128;
 const MENTION_MENU_LIMIT: usize = 6;
 const MIN_CHAT_HEIGHT: u16 = 3;
-const MIN_COMPOSER_HEIGHT: u16 = 2;
+const MIN_COMPOSER_HEIGHT: u16 = 6;
 const CONTEXT_WARNING_THRESHOLD_PERCENT: f64 = 85.0;
 const CONTEXT_CRITICAL_THRESHOLD_PERCENT: f64 = 95.0;
 const UI_IDLE_POLL_MS: u64 = 48;
@@ -332,7 +332,7 @@ pub async fn run_tui(config: &Config, options: TuiOptions) -> Result<()> {
                     app.queued_draft = state.draft.map(queued_session_to_ui);
                     if app.status_message.is_none() && app.queued_message_count() > 0 {
                         app.status_message = Some(format!(
-                            "Restored {} queued message(s) from previous session — ↑ to edit, Ctrl+X to discard",
+                            "Restored {} queued message(s) from previous session — ↑ to edit, ctrl+x to discard",
                             app.queued_message_count()
                         ));
                     }
@@ -2407,9 +2407,7 @@ async fn run_event_loop(
                     continue;
                 }
                 // Input handling
-                _ if is_composer_newline_key(key) => {
-                    app.insert_char('\n');
-                }
+                // Enter selects mention when menu is open (must precede newline).
                 KeyCode::Enter
                     if mention_menu_open
                         && crate::tui::file_mention::apply_mention_menu_selection(
@@ -2419,50 +2417,9 @@ async fn run_event_loop(
                 {
                     continue;
                 }
-                // #382: Ctrl+Enter forces a steer into the current turn.
+                // ctrl+enter: send/queue the composer content.
                 KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    if let Some(input) = app.submit_input() {
-                        if input.starts_with('/') {
-                            if execute_command_input(
-                                terminal,
-                                app,
-                                &mut engine_handle,
-                                &task_manager,
-                                config,
-                                &mut web_config_session,
-                                &input,
-                            )
-                            .await?
-                            {
-                                return Ok(());
-                            }
-                        } else {
-                            let queued = if let Some(mut draft) = app.queued_draft.take() {
-                                draft.display = input;
-                                draft
-                            } else {
-                                build_queued_message(app, input)
-                            };
-                            // Force steer: bypass decide_submit_disposition.
-                            if let Err(err) =
-                                steer_user_message(app, &engine_handle, queued.clone()).await
-                            {
-                                app.queue_message(queued);
-                                app.status_message = Some(format!(
-                                    "Steer failed ({err}); queued {} message(s)",
-                                    app.queued_message_count()
-                                ));
-                            }
-                        }
-                    }
-                }
-                KeyCode::Enter => {
-                    // #573: when the user typed a slash-command prefix that
-                    // the popup is matching (e.g. `/mo` → `/model`), Enter
-                    // should run the *highlighted match* rather than
-                    // sending the literal `/mo` text. Only kick in when the
-                    // popup has at least one entry; otherwise fall through
-                    // to the legacy submit path.
+                    // #573: slash-command matching on submit
                     if slash_menu_open
                         && !slash_menu_entries.is_empty()
                         && app.input.starts_with('/')
@@ -2474,13 +2431,6 @@ async fn run_event_loop(
                         if handle_plan_choice(app, config, &engine_handle, &input).await? {
                             continue;
                         }
-                        // `# foo` quick-add (#492) — when memory is enabled,
-                        // a single line starting with `#` (but not `##` /
-                        // `#!` shebangs / Markdown headings the user might
-                        // be pasting in) is intercepted: the text is
-                        // appended to the user memory file and the input
-                        // is consumed without firing a turn. Disabled
-                        // behaviour falls through to normal turn submit.
                         if config.memory_enabled() && is_memory_quick_add(&input) {
                             handle_memory_quick_add(app, &input, config);
                             continue;
@@ -2506,10 +2456,6 @@ async fn run_event_loop(
                             } else {
                                 build_queued_message(app, input)
                             };
-                            // #383: /edit — if the user invoked /edit to revise
-                            // the last message, undo the last exchange before
-                            // dispatching the replacement. Sync the engine
-                            // session so it also drops the old exchange.
                             if app.edit_in_progress {
                                 crate::commands::execute("/undo", app);
                                 app.edit_in_progress = false;
@@ -2525,6 +2471,14 @@ async fn run_event_loop(
                             submit_or_steer_message(app, config, &engine_handle, queued).await?;
                         }
                     }
+                }
+                // plain Enter (and Alt/Shift+Enter, Ctrl+J) inserts a newline.
+                _ if is_composer_newline_key(key) => {
+                    app.insert_char('\n');
+                }
+                // old no-mod Enter arm removed — plain Enter now inserts newline above.
+                KeyCode::Enter => {
+                    continue;
                 }
                 KeyCode::Backspace
                     if key.modifiers.contains(KeyModifiers::SUPER)
@@ -3273,7 +3227,10 @@ fn is_composer_newline_key(key: KeyEvent) -> bool {
     match key.code {
         KeyCode::Char('j') => key.modifiers.contains(KeyModifiers::CONTROL),
         KeyCode::Enter => {
-            key.modifiers.contains(KeyModifiers::ALT)
+            // Plain Enter inserts a newline (multi-line composer).
+            // Ctrl+Enter sends (handled earlier in the match).
+            key.modifiers.is_empty()
+                || key.modifiers.contains(KeyModifiers::ALT)
                 || (key.modifiers.contains(KeyModifiers::SHIFT)
                     && !key.modifiers.contains(KeyModifiers::CONTROL))
         }
@@ -6203,7 +6160,7 @@ fn active_subagent_status_label(app: &App) -> Option<String> {
     if let Some(elapsed) = elapsed {
         parts.push(elapsed);
     }
-    parts.push("Alt+4".to_string());
+    parts.push("alt+4".to_string());
     Some(parts.join(" \u{00B7} "))
 }
 
@@ -6275,9 +6232,9 @@ fn active_tool_status_label(app: &App) -> Option<String> {
         parts.push(elapsed);
     }
     if active_foreground_shell_running(app) {
-        parts.push("Ctrl+B shell".to_string());
+        parts.push("ctrl+b shell".to_string());
     }
-    parts.push("Alt+V".to_string());
+    parts.push("alt+v".to_string());
     Some(parts.join(" \u{00B7} "))
 }
 
@@ -7675,7 +7632,7 @@ fn selected_detail_footer_label(app: &App) -> Option<String> {
     )?;
     let label = detail_target_label(app, cell_index)?;
     Some(format!(
-        "Alt+V details: {}",
+        "alt+v details: {}",
         truncate_line_to_width(&label, 34)
     ))
 }

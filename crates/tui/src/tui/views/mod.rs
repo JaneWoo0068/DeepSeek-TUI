@@ -1224,7 +1224,7 @@ impl ModalView for ConfigView {
             }
             (
                 lines,
-                " Enter=apply, Esc=cancel, Ctrl+U=clear, Ctrl+A=all, \u{2190}/\u{2192}=move "
+                " Enter=apply, Esc=cancel, ctrl+u=clear, ctrl+a=all, \u{2190}/\u{2192}=move "
                     .to_string(),
             )
         } else {

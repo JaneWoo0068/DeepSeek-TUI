@@ -499,12 +499,12 @@ mod tests {
     fn substring_filter_finds_keybinding_by_chord() {
         let mut view = HelpView::new();
         type_filter(&mut view, "ctrl+r");
-        assert!(!view.filtered.is_empty(), "Ctrl+R should match");
+        assert!(!view.filtered.is_empty(), "ctrl+r should match");
         assert!(
             view.filtered
                 .iter()
                 .any(|idx| view.entries[*idx].label.eq_ignore_ascii_case("ctrl+r")),
-            "Ctrl+R chord must surface in the filtered set"
+            "ctrl+r chord must surface in the filtered set"
         );
     }
 

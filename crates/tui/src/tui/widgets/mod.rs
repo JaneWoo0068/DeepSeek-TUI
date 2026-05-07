@@ -483,17 +483,18 @@ impl Renderable for ComposerWidget<'_> {
                 ]))
             } else if !input_text.trim().is_empty() {
                 // Live disambiguation for #345: when there's content in the
-                // composer, show what `Enter` will do RIGHT NOW so the user
+                // composer, show what `ctrl+enter` will do RIGHT NOW so the user
                 // never has to guess between Immediate / Steer / QueueFollowUp /
                 // Queue. The disposition flips with engine state so this hint
-                // is the only reliable cue before pressing Enter.
+                // is the only reliable cue before pressing ctrl+enter.
+                // (Enter alone inserts a newline.)
                 use crate::tui::app::SubmitDisposition;
                 let queue_count = self.app.queued_message_count();
                 let (label, color) = match self.app.decide_submit_disposition() {
                     SubmitDisposition::Immediate => {
                         if queue_count > 0 {
                             (
-                                Some(format!("↵ send ({} queued)", queue_count)),
+                                Some(format!("ctrl+enter send ({} queued)", queue_count)),
                                 palette::DEEPSEEK_SKY,
                             )
                         } else {
@@ -502,23 +503,23 @@ impl Renderable for ComposerWidget<'_> {
                     }
                     SubmitDisposition::Queue => {
                         if self.app.offline_mode {
-                            (Some("↵ offline queue".to_string()), palette::STATUS_WARNING)
+                            (Some("ctrl+enter offline queue".to_string()), palette::STATUS_WARNING)
                         } else {
                             let label = if queue_count > 0 {
-                                format!("↵ queue ({} waiting)", queue_count.saturating_add(1))
+                                format!("ctrl+enter queue ({} waiting)", queue_count.saturating_add(1))
                             } else {
-                                "↵ queue for next turn".to_string()
+                                "ctrl+enter queue for next turn".to_string()
                             };
                             (Some(label), palette::TEXT_MUTED)
                         }
                     }
-                    // Steer and QueueFollowUp are now only reached via Ctrl+Enter override.
+                    // Steer and QueueFollowUp are reached via special override paths.
                     SubmitDisposition::Steer => (
-                        Some("↵ steering (Ctrl+Enter)".to_string()),
+                        Some("ctrl+enter steering".to_string()),
                         palette::DEEPSEEK_SKY,
                     ),
                     SubmitDisposition::QueueFollowUp => (
-                        Some("↵ queued (Ctrl+Enter to steer)".to_string()),
+                        Some("ctrl+enter queued".to_string()),
                         palette::TEXT_MUTED,
                     ),
                 };

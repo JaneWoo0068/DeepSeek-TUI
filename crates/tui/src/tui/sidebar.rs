@@ -284,7 +284,7 @@ fn render_sidebar_plan(f: &mut Frame, area: Rect, app: &App) {
 /// YOLO; only its content does.
 #[must_use]
 fn plan_panel_empty_hint(content_width: usize) -> String {
-    let full = "tracks update_plan / /goal / cycles";
+    let full = "Use /goal or update_plan tool to get started";
     truncate_line_to_width(full, content_width)
 }
 
@@ -381,10 +381,15 @@ fn render_sidebar_tasks(f: &mut Frame, area: Rect, app: &App) {
     }
 
     if app.task_panel.is_empty() {
-        lines.push(Line::from(Span::styled(
-            "No active tasks",
-            Style::default().fg(palette::TEXT_MUTED),
-        )));
+        if app.runtime_turn_id.is_some() {
+            // A turn is running but no durable tasks/shell jobs are tracked
+            // — don't show "No active tasks" which contradicts the turn status.
+        } else {
+            lines.push(Line::from(Span::styled(
+                "No active tasks",
+                Style::default().fg(palette::TEXT_MUTED),
+            )));
+        }
     } else {
         let running = app
             .task_panel

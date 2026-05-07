@@ -36,7 +36,7 @@ pub fn lines() -> Vec<Line<'static>> {
             Style::default().fg(palette::TEXT_PRIMARY),
         )),
         Line::from(Span::styled(
-            "Ctrl+C exits at any point.",
+            "ctrl+c exits at any point.",
             Style::default().fg(palette::TEXT_MUTED),
         )),
     ]

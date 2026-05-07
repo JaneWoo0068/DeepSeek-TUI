@@ -30,7 +30,7 @@ use crate::tui::views::{ModalKind, ModalView, ViewAction};
 /// Footer hint shown along the bottom border of the pager. Kept short so it
 /// fits on narrow terminals; full reference lives in the module docs.
 const FOOTER_HINT: &str =
-    " j/k scroll  Space/b page  Ctrl+D/U half  g/G top/bottom  / search  q quit ";
+    " j/k scroll  Space/b page  ctrl+d/u half  g/G top/bottom  / search  q quit ";
 
 pub struct PagerView {
     title: String,
@@ -658,7 +658,7 @@ mod tests {
     fn footer_hint_includes_new_bindings() {
         // The rendered pager must surface the new vim-style bindings to
         // the user; check the footer string covers the headline keys.
-        for needle in &["j/k", "g/G", "Space", "Ctrl+D", "/ search", "q quit"] {
+        for needle in &["j/k", "g/G", "Space", "ctrl+d", "/ search", "q quit"] {
             assert!(
                 FOOTER_HINT.contains(needle),
                 "footer hint missing {needle:?}: {FOOTER_HINT}"
