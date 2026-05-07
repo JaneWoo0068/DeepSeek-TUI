@@ -82,15 +82,12 @@ pub struct FooterProps {
     pub working_strip_frame: Option<u64>,
 }
 
-const WAVE_GLYPHS: [char; 8] = [
-    '\u{2581}', // ▁
-    '\u{2582}', // ▂
-    '\u{2583}', // ▃
-    '\u{2584}', // ▄
-    '\u{2585}', // ▅
-    '\u{2586}', // ▆
-    '\u{2587}', // ▇
-    '\u{2588}', // █
+const WAVE_GLYPHS: [char; 5] = [
+    ' ',
+    '\u{2591}', // ░ light shade
+    '\u{2592}', // ▒ medium shade
+    '\u{2593}', // ▓ dark shade
+    '\u{2588}', // █ full block — only at crest, otherwise shade
 ];
 
 /// One frame of the footer's live-work wave animation. `col` is the cell
@@ -109,7 +106,7 @@ pub fn footer_working_strip_glyph_at(col: usize, width: usize, frame: u64) -> ch
         return ' ';
     }
 
-    let t = frame as f64 / 1000.0;
+    let t = frame as f64 / 4000.0;  // slow down: 4x period
     let x = col as f64;
 
     let primary = (x * 0.52 - t * 8.0).sin();
@@ -1070,8 +1067,9 @@ mod tests {
             .zip(f80.chars())
             .filter(|(before, after)| before != after)
             .count();
+        // Slowed-down wave changes less between repaints.
         assert!(
-            changed > width / 4,
+            changed > 0,
             "expected the wave to drift across one 80ms repaint; changed {changed}/{width}"
         );
     }
