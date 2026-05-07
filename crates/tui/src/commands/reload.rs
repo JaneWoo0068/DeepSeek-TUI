@@ -14,8 +14,9 @@ pub fn reload() -> CommandResult {
 
     // Spawn a background shell that builds and installs.
     let script = format!(
-        "cd {} && cargo build --release -p deepseek-tui 2>&1 && cp target/release/deepseek-tui {} && echo '✓ reload ready — restart deepseek'",
+        "cd {} && cargo build --release -p deepseek-tui 2>&1 && cp target/release/deepseek-tui {} && codesign --force --sign - {} && echo '✓ reload ready — restart deepseek'",
         shell_escape(&source_dir),
+        shell_escape(&install_path()),
         shell_escape(&install_path()),
     );
 
