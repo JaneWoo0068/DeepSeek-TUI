@@ -1672,9 +1672,9 @@ fn placeholder_visual_lines_for(placeholder: &str, content_width: usize) -> usiz
 
 fn composer_min_input_rows(density: ComposerDensity) -> usize {
     match density {
-        ComposerDensity::Compact => 2,
-        ComposerDensity::Comfortable => 3,
-        ComposerDensity::Spacious => 4,
+        ComposerDensity::Compact => 1,
+        ComposerDensity::Comfortable => 2,
+        ComposerDensity::Spacious => 3,
     }
 }
 
@@ -2274,8 +2274,8 @@ mod tests {
 
     #[test]
     fn composer_density_changes_min_rows_and_height_cap() {
-        assert_eq!(composer_min_input_rows(ComposerDensity::Compact), 2);
-        assert_eq!(composer_min_input_rows(ComposerDensity::Spacious), 4);
+        assert_eq!(composer_min_input_rows(ComposerDensity::Compact), 1);
+        assert_eq!(composer_min_input_rows(ComposerDensity::Spacious), 3);
         assert!(
             composer_max_height(ComposerDensity::Spacious)
                 > composer_max_height(ComposerDensity::Compact)
