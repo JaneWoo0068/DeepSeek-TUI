@@ -6290,9 +6290,8 @@ fn active_tool_status_label(app: &App) -> Option<String> {
         parts.push(elapsed);
     }
     if active_foreground_shell_running(app) {
-        parts.push("ctrl+b shell".to_string());
+        parts.push("shell".to_string());
     }
-    parts.push("alt+v".to_string());
     Some(parts.join(" \u{00B7} "))
 }
 
@@ -7689,10 +7688,7 @@ fn selected_detail_footer_label(app: &App) -> Option<String> {
         app.viewport.transcript_cache.line_meta(),
     )?;
     let label = detail_target_label(app, cell_index)?;
-    Some(format!(
-        "alt+v details: {}",
-        truncate_line_to_width(&label, 34)
-    ))
+    Some(truncate_line_to_width(&label, 48))
 }
 
 fn detail_target_label(app: &App, cell_index: usize) -> Option<String> {

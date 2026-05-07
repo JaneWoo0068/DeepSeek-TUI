@@ -619,7 +619,6 @@ fn active_tool_status_label_summarizes_live_tool_group() {
     assert!(label.contains("run cargo test"));
     assert!(label.contains("1 active"));
     assert!(label.contains("1 done"));
-    assert!(label.contains("alt+v"));
 }
 
 #[test]
@@ -1843,7 +1842,7 @@ fn detail_target_prefers_visible_tool_card() {
     assert_eq!(detail_target_cell_index(&app), Some(1));
     assert_eq!(
         selected_detail_footer_label(&app).as_deref(),
-        Some("alt+v details: file_search")
+        Some("file_search")
     );
 }
 
