@@ -19,6 +19,7 @@ mod network;
 mod note;
 mod provider;
 mod queue;
+mod reload;
 mod rename;
 mod restore;
 mod review;
@@ -256,6 +257,12 @@ pub const COMMANDS: &[CommandInfo] = &[
         description_id: MessageId::CmdNetworkDescription,
     },
     // Session commands
+    CommandInfo {
+        name: "reload",
+        aliases: &["rebuild"],
+        usage: "/reload — rebuild + install + restart",
+        description_id: MessageId::CmdReloadDescription,
+    },
     CommandInfo {
         name: "rename",
         aliases: &[],
@@ -518,6 +525,7 @@ pub fn execute(cmd: &str, app: &mut App) -> CommandResult {
         "network" => network::network(app, arg),
 
         // Session commands
+        "reload" | "rebuild" => reload::reload(),
         "rename" => rename::rename(app, arg),
         "save" => session::save(app, arg),
         "sessions" | "resume" => session::sessions(app, arg),
