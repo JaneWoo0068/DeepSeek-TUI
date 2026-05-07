@@ -448,9 +448,9 @@ impl Renderable for ComposerWidget<'_> {
         let is_draft_mode = input_text.contains('\n') || visible_lines.len() > 1;
         if has_panel {
             let border_color = if input_text.trim().is_empty() {
-                palette::DEEPSEEK_SKY
+                palette::BORDER_COLOR
             } else {
-                self.mode_color()
+                palette::DEEPSEEK_SKY
             };
             let hint_line = if self.app.is_history_search_active() {
                 Some(Line::from(vec![
