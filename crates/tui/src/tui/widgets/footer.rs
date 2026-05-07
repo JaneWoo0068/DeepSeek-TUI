@@ -144,10 +144,18 @@ pub fn footer_working_strip_string(width: usize, frame: u64) -> String {
 pub fn footer_working_label(frame: u64, locale: Locale) -> String {
     let dots = (frame % 4) as usize;
     let base = tr(locale, MessageId::FooterWorking);
-    let mut out = String::with_capacity(base.len() + dots);
+    // Pad to fixed width so the status line doesn't jitter and push the
+    // water-spout wave left/right on every dot cycle.
+    let max_dots = 3;
+    let width = base.len() + max_dots;
+    let mut out = String::with_capacity(width);
     out.push_str(base);
     for _ in 0..dots {
         out.push('.');
+    }
+    let padding = max_dots.saturating_sub(dots);
+    for _ in 0..padding {
+        out.push(' ');
     }
     out
 }
@@ -1085,16 +1093,15 @@ mod tests {
 
     #[test]
     fn working_label_pulses_dots_through_full_cycle() {
-        // The label sequence `working` → `working.` → `working..` →
-        // `working...` then wraps back. Each frame is a discrete tick;
-        // the cycle is exactly 4 frames so adjacent ticks visibly differ.
-        assert_eq!(super::footer_working_label(0, Locale::En), "working");
-        assert_eq!(super::footer_working_label(1, Locale::En), "working.");
-        assert_eq!(super::footer_working_label(2, Locale::En), "working..");
+        // Fixed-width output: "working" base + up to 3 dots + trailing
+        // spaces so the status line never jitters the wave to its right.
+        assert_eq!(super::footer_working_label(0, Locale::En), "working   ");
+        assert_eq!(super::footer_working_label(1, Locale::En), "working.  ");
+        assert_eq!(super::footer_working_label(2, Locale::En), "working.. ");
         assert_eq!(super::footer_working_label(3, Locale::En), "working...");
         assert_eq!(
             super::footer_working_label(4, Locale::En),
-            "working",
+            "working   ",
             "wraps back at frame 4",
         );
         assert_eq!(super::footer_working_label(7, Locale::En), "working...");
