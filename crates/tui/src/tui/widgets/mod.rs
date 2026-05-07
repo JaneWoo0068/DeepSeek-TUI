@@ -1650,7 +1650,10 @@ fn composer_input_rows_budget(inner_height: u16, extra_lines: usize) -> usize {
 }
 
 fn composer_top_padding(content_lines: usize, rows_budget: usize) -> usize {
-    rows_budget.saturating_sub(content_lines.clamp(1, rows_budget))
+    // Top-align content: at most 1 row of padding for visual breathing room.
+    let padded = content_lines.clamp(1, rows_budget);
+    let gap = rows_budget.saturating_sub(padded);
+    gap.min(1)
 }
 
 /// Placeholder text shown when the composer input is empty.
@@ -2299,10 +2302,10 @@ mod tests {
         // inner_area: {x:1, y:1, w:38, h:3}  (borders shrink by 1 each side)
         // input_rows_budget = 3
         // placeholder_visual_lines(38) = 1  (placeholder is 22 chars, fits in 38)
-        // top_padding = 3 - clamp(1, 1, 3) = 2
+        // top_padding = min(3-1, 1) = 1  (gap capped at 1)
         // cursor_x = 0 + (1-0) + 0 = 1
-        // cursor_y = 0 + (1-0) + (2+0) = 3
-        assert_eq!(widget.cursor_pos(area), Some((1, 3)));
+        // cursor_y = 0 + (1-0) + (1+0) = 2
+        assert_eq!(widget.cursor_pos(area), Some((1, 2)));
     }
 
     #[test]
@@ -2396,7 +2399,8 @@ mod tests {
             height: 3,
         };
 
-        assert_eq!(widget.cursor_pos(area), Some((0, 2)));
+        // top_padding capped at 1, cursor rows=0 → y=1
+        assert_eq!(widget.cursor_pos(area), Some((0, 1)));
     }
 
     #[test]
@@ -2428,10 +2432,10 @@ mod tests {
 
     #[test]
     fn composer_top_padding_uses_clamp() {
-        // content_lines=0 is clamped to 1
-        assert_eq!(composer_top_padding(0, 3), 2);
-        // content_lines=1
-        assert_eq!(composer_top_padding(1, 3), 2);
+        // content_lines=0 is clamped to 1; gap capped at 1 row max
+        assert_eq!(composer_top_padding(0, 3), 1);
+        // content_lines=1; gap capped at 1
+        assert_eq!(composer_top_padding(1, 3), 1);
         // content_lines=3 fills the budget
         assert_eq!(composer_top_padding(3, 3), 0);
         // content_lines > budget is clamped
