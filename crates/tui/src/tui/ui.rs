@@ -2407,7 +2407,9 @@ async fn run_event_loop(
                     continue;
                 }
                 // Input handling
-                // Enter selects mention when menu is open (must precede newline).
+                _ if is_composer_newline_key(key) => {
+                    app.insert_char('\n');
+                }
                 KeyCode::Enter
                     if mention_menu_open
                         && crate::tui::file_mention::apply_mention_menu_selection(
@@ -2417,8 +2419,43 @@ async fn run_event_loop(
                 {
                     continue;
                 }
-                // ctrl+enter: send/queue the composer content.
+                // ctrl+enter: force a steer into the current turn.
                 KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    if let Some(input) = app.submit_input() {
+                        if input.starts_with('/') {
+                            if execute_command_input(
+                                terminal,
+                                app,
+                                &mut engine_handle,
+                                &task_manager,
+                                config,
+                                &mut web_config_session,
+                                &input,
+                            )
+                            .await?
+                            {
+                                return Ok(());
+                            }
+                        } else {
+                            let queued = if let Some(mut draft) = app.queued_draft.take() {
+                                draft.display = input;
+                                draft
+                            } else {
+                                build_queued_message(app, input)
+                            };
+                            if let Err(err) =
+                                steer_user_message(app, &engine_handle, queued.clone()).await
+                            {
+                                app.queue_message(queued);
+                                app.status_message = Some(format!(
+                                    "Steer failed ({err}); queued {} message(s)",
+                                    app.queued_message_count()
+                                ));
+                            }
+                        }
+                    }
+                }
+                KeyCode::Enter => {
                     // #573: slash-command matching on submit
                     if slash_menu_open
                         && !slash_menu_entries.is_empty()
@@ -2503,14 +2540,6 @@ async fn run_event_loop(
                             submit_or_steer_message(app, config, &engine_handle, queued).await?;
                         }
                     }
-                }
-                // plain Enter (and Alt/Shift+Enter, Ctrl+J) inserts a newline.
-                _ if is_composer_newline_key(key) => {
-                    app.insert_char('\n');
-                }
-                // old no-mod Enter arm removed — plain Enter now inserts newline above.
-                KeyCode::Enter => {
-                    continue;
                 }
                 KeyCode::Backspace
                     if key.modifiers.contains(KeyModifiers::SUPER)
@@ -3259,10 +3288,7 @@ fn is_composer_newline_key(key: KeyEvent) -> bool {
     match key.code {
         KeyCode::Char('j') => key.modifiers.contains(KeyModifiers::CONTROL),
         KeyCode::Enter => {
-            // Plain Enter inserts a newline (multi-line composer).
-            // Ctrl+Enter sends (handled earlier in the match).
-            key.modifiers.is_empty()
-                || key.modifiers.contains(KeyModifiers::ALT)
+            key.modifiers.contains(KeyModifiers::ALT)
                 || (key.modifiers.contains(KeyModifiers::SHIFT)
                     && !key.modifiers.contains(KeyModifiers::CONTROL))
         }

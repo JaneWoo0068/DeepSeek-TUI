@@ -151,14 +151,9 @@ pub const KEYBINDINGS: &[KeybindingEntry] = &[
     },
     // --- Submission / actions ---
     KeybindingEntry {
-        chord: "ctrl+enter",
+        chord: "Enter",
         description_id: crate::localization::MessageId::KbSendDraft,
         section: KeybindingSection::Submission,
-    },
-    KeybindingEntry {
-        chord: "Enter",
-        description_id: crate::localization::MessageId::KbInsertNewline,
-        section: KeybindingSection::Editing,
     },
     KeybindingEntry {
         chord: "Esc",

@@ -47,7 +47,7 @@ fn composer_newline_shortcuts_do_not_steal_ctrl_enter() {
         KeyCode::Enter,
         KeyModifiers::SHIFT,
     )));
-    assert!(is_composer_newline_key(KeyEvent::new(
+    assert!(!is_composer_newline_key(KeyEvent::new(
         KeyCode::Enter,
         KeyModifiers::NONE,
     )));
