@@ -418,6 +418,9 @@ pub async fn run_tui(config: &Config, options: TuiOptions) -> Result<()> {
         persistence_actor::init_actor(handle);
     }
 
+    // Set a clean terminal window title (not "deepseek resume latest").
+    set_terminal_title(&app);
+
     let result = run_event_loop(
         &mut terminal,
         &mut app,
@@ -461,6 +464,23 @@ pub async fn run_tui(config: &Config, options: TuiOptions) -> Result<()> {
     }
 
     result
+}
+
+/// Set the terminal window title to a clean summary.
+fn set_terminal_title(app: &App) {
+    let ws = app
+        .workspace
+        .file_name()
+        .map(|n| n.to_string_lossy())
+        .unwrap_or_else(|| app.workspace.to_string_lossy());
+    let ws = ws.trim();
+    if ws.is_empty() {
+        return;
+    }
+    let title = format!("deepseek \u{00B7} {ws}");
+    // OSC 0 ; title BEL — write via stderr to avoid alt-screen buffering.
+    use std::io::Write;
+    let _ = write!(std::io::stderr(), "\x1b]0;{title}\x07");
 }
 
 fn format_resume_hint(session_id: Option<&str>) -> Option<String> {
